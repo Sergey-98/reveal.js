@@ -8,7 +8,8 @@
 
 		<link rel="stylesheet" href="dist/reset.css">
 		<link rel="stylesheet" href="dist/reveal.css">
-		<link rel="stylesheet" href="dist/theme/black.css">
+		<link rel="stylesheet" href="dist/theme/moon.css">
+		<link rel="stylesheet" href="dist/style.css">
 
 		<!-- Theme used for syntax highlighted code -->
 		<link rel="stylesheet" href="plugin/highlight/monokai.css">
@@ -16,8 +17,288 @@
 	<body>
 		<div class="reveal">
 			<div class="slides">
-				<section>Slide 1</section>
-				<section>Slide 2</section>
+				<section>
+					<h1>FileSystem API</h1>
+					<!-- Can you imagine, a web application giving ability to create, update, delete and rename a file in the browser? Yes, you can do all this now in the browser using FileSystem API in HTML 5 supported browser.
+					All files that we create in browser gets stored in sandboxed section of the user's local file system. At the time of writing this article, Google Chrome and Opera supports this feature. -->
+					<!-- Можете ли вы представить себе веб-приложение, предоставляющее возможность создавать, обновлять, удалять и переименовывать файл в браузере? Да, теперь вы можете делать все это в браузере, используя FileSystem API в браузере, поддерживаемом HTML 5.
+					Все файлы, которые мы создаем в браузере, сохраняются в изолированном разделе локальной файловой системы пользователя. На момент написания этой статьи Google Chrome и Opera поддерживали эту функцию. -->
+				</section>
+				<section>
+					<h4>This API consists of the following main parts:</h4>
+					<ul>
+						<li class="fragment">Mechanisms for managing files and for reading files: File/Blob, FileList, FileReader</li>
+						<li class="fragment">Mechanisms for creating files and writing data to them: Blob, FileWriter</li>
+						<li class="fragment">Mechanisms for working with directories and with the file system: DirectoryReader, FileEntry/DirectoryEntry, LocalFileSystem</li>
+					</ul>
+					<!-- A few words about the objects to be worked with:
+					File — the actual file; allows you to get read-only information such as name, size, mimetype, and so on.
+					FileList is an "array" of File objects.
+					Blob — an entity that allows you to parse a file by bytes. -->
+
+					<!-- Пара слов об объектах, с которыми предстоит работать:
+					File — собственно файл; позволяет получить такую доступную только для чтения информацию, как имя, размер, mimetype и прочее.
+					FileList — «массив» объектов File.
+					Blob — сущность, позволяющая разбирать файл по байтам. -->
+				</section>
+				<section>
+					<section>
+						<h3>Refer to the file system</h3>
+						<h5 class="fragment fade-out">Let's check the browser's support for the functions we need</h5>
+						<pre class="fragment">
+							<code class = "slide-code" data-trim data-noescape>
+								if (window.File && window.FileReader && window.FileList && window.Blob) {
+									console.log('functions support!');
+								} else {
+									console.log('File API is not supported by this browser');
+								}
+							</code>
+						</pre>
+					</section>
+					<section>
+						<h4>A web application can access the file system by calling the following method:</h4>
+						<pre>
+							<code class = "slide-code" data-trim data-noescape>
+								window.requestFileSystem(type, size, successCallback, opt_errorCallback)
+							</code>
+						</pre>
+						<!-- 
+							type
+							Storage rules, available values window.TEMPORARY and window.PERSISTENT. data stored using the TEMPORARY key can be deleted at the discretion of the browser (for example, if there is not enough space). If the Persistent key is set, then the data can be cleared only after user or application actions.
+
+							size
+							The size (in bytes) of the storage that the application will need.
+
+							successCallback
+							Callback is a function executed in case of successful access to the file system. Its argument is an object of type FileSystem.
+
+							opt_errorCallback
+							Optional callback function for error handling. It is also called when there are errors accessing the file system. The parameter is an object of type FileError.
+
+							If you call the requestFileSystem() method within your application for the first time, then the repository will be created at this moment. It is very important to remember that this storage is private and another application will not have access to it. This also means that the application cannot change other files and folders located on the hard disk. 
+						-->
+
+						<!-- 
+							type
+							Правила хранения, доступные значения window.TEMPORARY и window.PERSISTENT. данные, хранящиеся с использованием ключа TEMPORARY могут быть удаление по усмотрению браузером (например, если не хватает места). Если же выставлен ключPERSISTENT, то данные могут быть очищены только после действий пользователя или приложения.
+
+							size
+							Размер (в байтах) хранилища, которое потребуется приложению.
+
+							successCallback
+							Callback-функция, выполняемая в случае успешного обращения к файловой системе. Ее аргументом является объект типа FileSystem.
+
+							opt_errorCallback
+							Необязательная callback-функция для обработки ошибок. Так же вызывается, когда возникают ошибки обращения к файловой системе. Параметром является объект типа FileError.
+
+							Если вы вызываете метод requestFileSystem() в рамках вашего приложения в первый раз, то в этот момент и будет создано хранилище. Очень важно помнить, что данное хранилище является закрытым и другое приложение не будет иметь к нему доступа. Это так же значит, что приложение не может менять прочие файлы и папки, расположенные на жестком диске. 
+						-->
+					</section>
+					<section>
+						<h4>Usage example</h4>
+						<pre>
+							<code class = "slide-code"  data-trim data-noescape>
+								function onInitFs(file) {
+									let fileSystem = file.root.createReader();
+									fileSystem.readEntries (function(results) {
+										console.log(results);
+									});
+								}
+								window.webkitRequestFileSystem(window.TEMPORARY, 1024*1024, onInitFs, errorHandler);
+							</code>
+						</pre>
+					</section>
+				</section>
+				<section>
+					<h3>Creating a file</h3>
+					<!-- You can get or create a file using the GetFile() method from the DirectoryEntry interface. After accessing the repository, callback returns us a FileSystem object containing DirectoryEntry (fs.root), referring to the root folder of the repository -->
+					
+					<!-- Получить или создать файл можно с помощью метода getFile() у интерфейса DirectoryEntry. После обращения к хранилищу, callback возвращает нам объект FileSystem, содержащий в себе DirectoryEntry (fs.root), ссылающийся на корневую папку хранилища. -->
+					<pre>
+						<code class = "slide-code"  data-trim data-noescape>
+							function createFile(name, content, type){
+								window.webkitRequestFileSystem(window.TEMPORARY, 1024*1024, function(file){
+									let strblob = new Blob([content], {
+									type: type
+								});
+								file.root.getFile(name, {create: true}, function(fileEntry) {
+									fileEntry.createWriter(function(fileWriter) {
+										fileWriter.write(strblob);
+											console.log(fileEntry.toURL());
+										}, errorHandler);
+									},errorHandler);
+								}, errorHandler);
+						}
+						createFile("test.txt", "Text example", "text");
+						</code>
+					</pre>
+				</section>
+				<!-- 
+					In this example, I created a function that will create a file in the file system when called test.txt with the contents of "Text example" and a link to the file is output to the console. As you can see it takes three arguments:
+					- file name
+					- file content
+					- file type
+					The file type is needed to convert a string into a blob object, it is in this format that the contents of the file are recorded.
+					To create a file, the GetFile() method is used and its arguments are:
+					- file name
+					- an object with options, to create a file, you must specify the create key with the value true.
+					- callback functions, successful execution and error
+					Upon successful completion, a file will be created and a FileEntry link will be returned to it, then it will be possible to record data.
+					This is done using the createWriter() method, we open the file for writing, get the FileWriter object and use the write() method to write data in blob format. 
+				-->
+				<section>
+					<h3>Reading a file by name</h3>
+					<!-- 
+						With this ReadFile() function, you can easily read a text file. The function takes one argument - the file name. After getting the file into the FileEntry object for reading, we use the file() method. It is worth noting that the information is also returned in blob format, so FileReader is used to convert it into a text representation
+					-->
+					<section>
+						<pre>
+							<code class = "slide-code"  data-trim data-noescape>
+								function readFile(name){
+									window.webkitRequestFileSystem(window.TEMPORARY, 1024*1024, function(file){
+										file.root.getFile(name, {}, function(fileEntry) {
+											fileEntry.file(function(read) {
+												let reader = new FileReader();
+												reader.onloadend = function(e) {
+													console.log(this.result);
+												}
+													reader.readAsText(read)
+											}, errorHandler);
+										}, errorHandler);
+									}, errorHandler);
+								}
+								readFile("test.txt");
+							</code>
+						</pre>
+					</section>
+					<section>
+						<h4>FileReader provides the following methods for reading:</h4>
+						<ul>
+							<li class="fragment">FileReader.readAsBinaryString(Blob|File)</li>
+							<li class="fragment">FileReader.readAsText(Blob|File, opt_encoding)</li>
+							<li class="fragment">FileReader.readAsDataURL(Blob|File)</li>
+							<li class="fragment">FileReader.readAsArrayBuffer(Blob|File)</li>
+						</ul>
+					</section>
+				</section>
+				<section>
+					<h3>Deleting Files</h3>
+					<pre>
+						<code class = "slide-code"  data-trim data-noescape>
+							function removeFile(name){
+								window.webkitRequestFileSystem(window.TEMPORARY, 1024*1024, function(fs) {
+									fs.root.getFile(name, {create: false}, function(fileEntry) {
+										fileEntry.remove(function() {
+											console.log('file ' + name + ' delete!');
+										}, errorHandler);
+									}, errorHandler);
+								}, errorHandler);
+							}
+							removeFile("test.txt");
+						</code>
+					</pre>
+					<!-- 
+						After calling the removeFile() function, our file test.txt was successfully deleted from the file storage. The function itself takes a single argument - the path to the file.
+					-->
+				</section>
+				<section>
+					<h3>Writing to a file</h3>
+					<pre>
+					<code class = "slide-code"  data-trim data-noescape>
+						function writeFile(name, content, type, flag=false){
+							window.webkitRequestFileSystem(window.TEMPORARY, 1024*1024, function(file){
+								file.root.getFile(name, {create: false}, function(fileEntry) {
+									fileEntry.file(function(read) {
+										let reader = new FileReader();
+										reader.onloadend = function(e) {
+											if(!flag){
+												content = this.result + content;
+											} else{
+												removeFile(name);
+											}
+											createFile(name, content,type);
+										}
+										reader.readAsText(read)
+									}, errorHandler);
+								}, errorHandler);
+							}, errorHandler);
+						}
+						writeFile("test.txt", "new text", "text")
+					</code>
+				</pre>
+				<!-- 
+					The function uses all the functions that we described above and takes four arguments:
+					- the path to the file
+					- Recorded data
+					- Data format
+					- Flag, false (by default) - data is appended to the file, true - data overwrites the file.
+				-->
+				</section>
+				<section>
+					<h3>Сreating a directory</h3>
+					<pre>
+						<code class = "slide-code"  data-trim data-noescape>
+							function createFolder(name){
+								window.webkitRequestFileSystem(window.TEMPORARY, 1024*1024, function(fs) {
+									fs.root.getDirectory(name, {create: true}, function(dirEntry) {
+										console.log("folder " + name + " creating!");
+									}, errorHandler);
+								}, errorHandler);
+							}
+							createFolder("newFolder");
+						</code>
+					</pre>
+					<!-- 
+						Using the CreateFolder() function, we will create a "NewFolder" folder in our file system.
+						Instead of the getFile() method, we use getDirectory(). This method is used to get the file system folders. Here you also need to pass the create key with the value true to the options.
+					-->
+				</section>
+				<section>
+					<h3>Deleting a directory</h3>
+					<pre>
+						<code class = "slide-code"  data-trim data-noescape>
+							function removeFolder(name){
+								window.webkitRequestFileSystem(window.TEMPORARY, 1024*1024, function(fs) {
+									fs.root.getDirectory(name, {}, function(dirEntry) {
+											dirEntry.removeRecursively(function() {
+													console.log('folder ' + name + ' deleting!');
+												}, errorHandler);
+									}, errorHandler);
+								}, errorHandler);
+							}
+							removeFolder("newFolder");
+						</code>
+					</pre>
+					<!-- 
+						After calling the remove Folder() function, the specified folder will be deleted.
+						To delete the dir Entry folder object, the removeRecursively() method is applied. This method is used for recursive deletion, that is, everything in the folder will also be deleted.
+					-->
+				</section>
+				<section>
+					<h3>Moving files</h3>
+					<pre>
+						<code class = "slide-code"  data-trim data-noescape>
+							function moveFile(path, path2){
+								window.webkitRequestFileSystem(window.TEMPORARY, 1024*1024, function(fs) {
+									fs.root.getFile(path, {}, function(fileEntry) {
+										fs.root.getDirectory(path2, {}, function(dirEntry) {
+											fileEntry.moveTo(dirEntry);
+										}, errorHandler);
+									}, errorHandler);
+								}, errorHandler);
+							}
+						</code>
+					</pre>
+					<!-- 
+						This function takes two arguments the path to the file to be moved and the path to move. For the FileEntry file object, the moveTo() method is used, which in turn is passed the object of the folder where the file will be moved.
+					-->
+				</section>
+				<section>
+					<h2>Thanks for your attention!</h2>
+					<!-- 
+						At the end of the presentation, I would like to note that the FileSystem API can be used to upload any files supported by the Google chrome browser to the file storage.
+					-->
+				</section>
 			</div>
 		</div>
 
@@ -35,6 +316,7 @@
 				// Learn about plugins: https://revealjs.com/plugins/
 				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
 			});
+			Reveal.initialize({ slideNumber: true });
 		</script>
 	</body>
 </html>
